@@ -1,3 +1,4 @@
+host: deepseek
 interface:
   display_name: "Analysis Coder"
   short_description: "Generate reproducible R and Python analysis scripts"

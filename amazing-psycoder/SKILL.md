@@ -25,18 +25,18 @@ This is the entry point for the Amazing PsyCoder system. It routes work into two
 
 **This skill does NOT generate code itself.** For end-to-end generation, it enforces design → code → review. For an existing artifact, it starts at the highest stage supported by the input: a complete config may go to Coder, and existing code may go directly to Reviewer.
 
-**Platforms**: Claude Code / Codex / Hermes / OpenClaw — follows the [agentskills.io](https://agentskills.io) open standard. See [PLATFORMS.md](PLATFORMS.md) for platform-specific installation and tool mapping.
+**Platforms**: DeepSeek — DeepSeek Harness (dsh) or a direct DeepSeek API runtime; follows the [agentskills.io](https://agentskills.io) open standard. See [PLATFORMS.md](PLATFORMS.md) for installation and tool mapping. Claude Code, Codex, Hermes, and OpenClaw are not required.
 
 ## Execution Profiles
 
 Use **standalone** unless the caller supplies a validated PsyCoder Studio Generation Envelope 4.0 containing a frozen `ExperimentModel@4.0`, canonical `modelHash`, exact asset manifest, and `assetSetHash`.
 
-- **Standalone Agent Skills host**: load [STANDALONE.md](STANDALONE.md). This profile covers Claude Code, Codex, Hermes, OpenClaw, or another compatible host. Persist YAML/config/code/review artifacts in the user's workspace and adapt actions to the host's available tools. Studio service dependencies and Studio capability flags do not apply.
+- **Standalone Agent Skills host**: load [STANDALONE.md](STANDALONE.md). This profile covers DeepSeek Harness, the ds-psycoder CLI, or another compatible host. Persist YAML/config/code/review artifacts in the user's workspace and adapt actions to the host's available tools. Studio service dependencies and Studio capability flags do not apply.
 - **PsyCoder Studio**: load [PSYCODER_STUDIO.md](PSYCODER_STUDIO.md) and the
   machine-readable files under `runtime/`. Those files are authoritative for
   website routing, schemas, generation availability, and package shape.
 
-Never infer the profile from the model vendor. Claude and OpenAI models may be
+Never infer the profile from the model vendor. Any DeepSeek model may be
 used in either profile; the input envelope and execution environment decide it.
 
 ## Authority and Experiment Semantics
@@ -491,12 +491,12 @@ The orchestrator stays compact; load only the resources required by the selected
 | Need | Authoritative resource |
 |------|------------------------|
 | Platform capabilities | `PLATFORMS.md` |
-| Standalone Claude Code/Codex execution | `STANDALONE.md` |
+| Standalone DeepSeek execution | `STANDALONE.md` |
 | PsyCoder Studio execution | `PSYCODER_STUDIO.md` + `runtime/` |
 | Experiment design / generation / review | `psy-exp-designer/` → `psy-exp-coder/` → `psy-exp-reviewer/` |
 | Analysis design / generation / review | `psy-ana-designer/` → `psy-ana-coder/` → `psy-ana-reviewer/` |
 | Deterministic preflight checks | `scripts/validate_experiment.py`, `scripts/validate_analysis.py` |
-| Installation | `install.sh` |
+| Installation | `install.sh` / `install.ps1` / `ds_psycoder.py` |
 
 ---
 

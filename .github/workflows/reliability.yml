@@ -41,10 +41,12 @@ jobs:
           bash -n amazing-psycoder/install.sh
           target="$(mktemp -d)"
           trap 'rm -rf "$target"' EXIT
-          ./amazing-psycoder/install.sh "$target"
-          ./amazing-psycoder/install.sh --check "$target"
+          ./amazing-psycoder/install.sh --target "$target"
+          ./amazing-psycoder/install.sh --check --target "$target"
+          python ds_psycoder.py doctor --target "$target"
+          python ds_psycoder.py run --backend api --dry-run --target "$target" --workdir "$target" "smoke test" > /dev/null
       - name: Compile maintained Python sources
-        run: python -m compileall -q amazing-psycoder/scripts amazing-psycoder/tests
+        run: python -m compileall -q ds_psycoder.py amazing-psycoder/scripts amazing-psycoder/tests
       - name: Check maintained JavaScript examples
         shell: bash
         run: |

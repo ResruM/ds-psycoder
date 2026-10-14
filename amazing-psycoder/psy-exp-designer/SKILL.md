@@ -443,7 +443,7 @@ Open when the task matches:
 
 The Designer produces different output formats depending on the execution environment.
 
-### Standalone (Claude Code / Codex terminal)
+### Standalone (DeepSeek Harness / terminal)
 
 1. **Sequence Timeline** — sequence-row diagram of the trial structure with response rules (user-facing)
 2. **Complete Design Decision Registry** — all decisions from all phases with sources (user-facing, presented at Gate 5)

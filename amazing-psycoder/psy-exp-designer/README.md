@@ -47,7 +47,7 @@ Phase 5: Validate    → 验证 + 全量设计审查 → 路由至代码生成
 
 | 文件 | 用途 |
 |------|------|
-| [SKILL.md](SKILL.md) | 完整工作流规范（Claude 读取） |
+| [SKILL.md](SKILL.md) | 完整工作流规范（DeepSeek 读取） |
 | [paradigms/](paradigms/) | 38个范式规范文件 |
 | [references/config-schema.md](references/config-schema.md) | Config YAML schema + 9条验证规则 |
 | [references/condition-file-generation.md](references/condition-file-generation.md) | 条件文件生成工具 |

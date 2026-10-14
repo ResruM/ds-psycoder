@@ -4,8 +4,8 @@ Amazing PsyCoder v1.4.0. This profile uses the same evidence states and
 scientific semantics as Studio, while keeping YAML and artifacts in the user's
 workspace.
 
-Use this profile when Amazing PsyCoder is installed directly in Claude Code,
-Codex, or another Agent Skills host and no PsyCoder Studio generation envelope
+Use this profile when Amazing PsyCoder is installed directly in DeepSeek
+Harness (dsh) or the ds-psycoder CLI and no PsyCoder Studio generation envelope
 is present.
 
 ## Contract

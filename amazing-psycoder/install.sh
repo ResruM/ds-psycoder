@@ -1,290 +1,125 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-# Amazing PsyCoder — validated, staged cross-platform installer
+# DeepSeek PsyCoder (ds-psycoder) — 安装器包装脚本。
+#
+# 真正的安装 / 漂移检查逻辑在仓库根目录的 ds_psycoder.py 中实现：它跨平台、
+# 只依赖 Python 标准库，并把 7 个 skill 安装到 DeepSeek Harness 的 skill 根目录。
+# 本脚本只负责参数转写和查找可用的 Python 解释器，不再支持 Claude Code、
+# Codex、Hermes 或 OpenClaw。
 
-MODE="install"
-SCOPE="user"
-PROJECT_DIR="$(pwd)"
-REQUESTED=""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
-    cat <<'EOF'
-Usage:
-  ./install.sh [--check] claude|codex|hermes|openclaw
-  ./install.sh [--check] [--scope project] [--project-dir PATH] claude|codex|openclaw
-  ./install.sh [--check] /absolute/path/to/skills
+    cat <<EOF
+用法:
+  ./install.sh [--check] [--scope user|project] [--project-dir PATH] [deepseek]
+  ./install.sh [--check] --target /absolute/path/to/skills
 
-Examples:
-  ./install.sh claude
-  ./install.sh codex
-  ./install.sh hermes
-  ./install.sh openclaw
-  ./install.sh --scope project --project-dir /path/to/repo claude
-  ./install.sh --check codex
+说明:
+  默认安装到 DeepSeek Harness 的用户级 skill 根目录 ${DSH_HOME:-~/.dsh}/skills
+  （DSH_HOME 未设置时为 ~/.dsh/skills）。
+  --scope project 时安装到 <project>/.dsh/skills。
 
-Project scope is defined for Claude Code, Codex, and an OpenClaw agent
-workspace. For a custom Hermes directory, pass its absolute skills path.
+示例:
+  ./install.sh                              # 用户级安装
+  ./install.sh deepseek                     # 同上，显式指定平台
+  ./install.sh --scope project --project-dir /path/to/study
+  ./install.sh --check                      # 只检查漂移，不修改文件
+  ./install.sh --target ~/.dsh/skills       # 自定义安装目录
+
+环境变量:
+  DSH_HOME      DeepSeek Harness 配置根目录（默认 ~/.dsh）
+  PYTHON_BIN    指定 Python 解释器
 EOF
 }
 
+find_cli() {
+    local candidate
+    for candidate in "$REPO_ROOT/ds_psycoder.py" "${SCRIPT_DIR}/ds_psycoder.py"; do
+        if [[ -f "$candidate" ]]; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# 逐个候选解释器实际执行一次版本探测：Windows 上 python3 可能只是应用商店占位符。
+find_python() {
+    local candidate
+    for candidate in "${PYTHON_BIN:-}" python3 python py; do
+        [[ -n "$candidate" ]] || continue
+        command -v "$candidate" >/dev/null 2>&1 || continue
+        if "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 8) else 1)' >/dev/null 2>&1; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+CHECK=0
+SCOPE="user"
+PROJECT_DIR="$(pwd)"
+TARGET=""
+PLATFORM=""
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --check)
-            MODE="check"
-            shift
-            ;;
+        --check) CHECK=1; shift ;;
         --scope)
             [[ $# -ge 2 ]] || { echo "--scope 需要 user 或 project"; exit 1; }
-            SCOPE="$2"
-            shift 2
-            ;;
+            SCOPE="$2"; shift 2 ;;
         --project-dir)
             [[ $# -ge 2 ]] || { echo "--project-dir 需要路径"; exit 1; }
-            PROJECT_DIR="$2"
-            shift 2
-            ;;
-        --help|-h)
-            usage
-            exit 0
-            ;;
+            PROJECT_DIR="$2"; shift 2 ;;
+        --target)
+            [[ $# -ge 2 ]] || { echo "--target 需要路径"; exit 1; }
+            TARGET="$2"; shift 2 ;;
+        --help|-h) usage; exit 0 ;;
         --*)
-            echo "未知参数: $1"
-            usage
-            exit 1
-            ;;
+            echo "未知参数: $1"; usage; exit 1 ;;
         *)
-            [[ -z "$REQUESTED" ]] || { echo "只能指定一个平台或安装路径"; exit 1; }
-            REQUESTED="$1"
-            shift
-            ;;
+            [[ -z "$PLATFORM" ]] || { echo "只能指定一个平台或安装路径"; exit 1; }
+            PLATFORM="$1"; shift ;;
     esac
 done
 
-[[ "$SCOPE" == "user" || "$SCOPE" == "project" ]] || {
+if [[ "$SCOPE" != "user" && "$SCOPE" != "project" ]]; then
     echo "未知 scope: $SCOPE（仅支持 user 或 project）"
     exit 1
-}
+fi
 
-detect_platform() {
-    local requested="${1:-}"
-    local candidates=()
-
-    # Explicit platform/path always wins over auto-detection.
-    if [[ -n "$requested" ]]; then
-        echo "$requested"
-        return
-    fi
-
-    [[ -n "${CLAUDE_CODE:-}" ]] && candidates+=("claude")
-    command -v codex &>/dev/null && candidates+=("codex")
-    command -v hermes &>/dev/null && candidates+=("hermes")
-    [[ -n "${HOME:-}" && -d "${HOME}/.openclaw" ]] && candidates+=("openclaw")
-
-    if [[ ${#candidates[@]} -eq 1 ]]; then
-        echo "${candidates[0]}"
-    elif [[ ${#candidates[@]} -gt 1 ]]; then
-        echo "ambiguous:${candidates[*]}"
-    fi
-}
-
-PLATFORM=$(detect_platform "$REQUESTED")
-
-if [[ "$PLATFORM" == ambiguous:* ]]; then
-    echo "检测到多个宿主：${PLATFORM#ambiguous:}"
-    echo "请显式指定 claude、codex、hermes 或 openclaw。"
+if [[ -n "$TARGET" && -n "$PLATFORM" ]]; then
+    echo "--target 与位置参数不能同时使用"
     exit 1
 fi
 
-if [[ -z "$PLATFORM" ]]; then
-    echo "无法自动检测平台，请手动指定："
-    echo "  ./install.sh claude"
-    echo "  ./install.sh codex"
-    echo "  ./install.sh hermes"
-    echo "  ./install.sh openclaw"
-    echo "  或直接指定路径： ./install.sh /path/to/skills"
+if [[ -n "$PLATFORM" && "$PLATFORM" != "deepseek" && "$PLATFORM" != "dsh" ]]; then
+    case "$PLATFORM" in
+        /*|[A-Za-z]:[/\]*) TARGET="$PLATFORM" ;;
+        *)
+            echo "未知平台: $PLATFORM"
+            echo "本仓库只支持 DeepSeek Harness (deepseek / dsh)，或直接传入安装目录的绝对路径。"
+            exit 1
+            ;;
+    esac
+fi
+
+CLI="$(find_cli)" || {
+    echo "未找到 ds_psycoder.py；请在仓库 checkout 中运行本脚本。"
     exit 1
-fi
+}
 
-# 如果参数是路径，直接使用
-if [[ "$PLATFORM" == /* ]]; then
-    SKILLS_DIR="$PLATFORM"
-else
-    if [[ -z "${HOME:-}" ]]; then
-        echo "无法确定安装目录：HOME 环境变量未设置。请传入绝对路径。"
-        exit 1
-    fi
-    if [[ "$SCOPE" == "project" ]]; then
-        PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
-        case "$PLATFORM" in
-            claude) SKILLS_DIR="$PROJECT_DIR/.claude/skills" ;;
-            codex|openclaw) SKILLS_DIR="$PROJECT_DIR/.agents/skills" ;;
-            *) echo "$PLATFORM 暂不支持 --scope project；请传入绝对安装路径"; exit 1 ;;
-        esac
-    else
-        case "$PLATFORM" in
-            claude)   SKILLS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills" ;;
-            codex)    SKILLS_DIR="$HOME/.agents/skills" ;;
-            hermes)   SKILLS_DIR="$HOME/.hermes/skills" ;;
-            openclaw) SKILLS_DIR="$HOME/.openclaw/skills" ;;
-            *)        echo "未知平台: $PLATFORM"; exit 1 ;;
-        esac
-    fi
-fi
-
-if [[ "$MODE" == "install" ]]; then
-    mkdir -p "$SKILLS_DIR"
-elif [[ ! -d "$SKILLS_DIR" ]]; then
-    echo "未安装：目录不存在 $SKILLS_DIR"
+PYTHON="$(find_python)" || {
+    echo "未找到 Python 解释器。请安装 Python 3.8+，或用 PYTHON_BIN 指定路径。"
     exit 1
-fi
-
-echo "平台: $PLATFORM"
-echo "范围: $SCOPE"
-echo "目录: $SKILLS_DIR"
-echo ""
-
-SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
-VALIDATOR_PYTHON="${PYTHON_BIN:-python3}"
-
-if [[ "$MODE" == "install" ]]; then
-    echo "验证源 skill..."
-    "$VALIDATOR_PYTHON" "$SKILL_ROOT/scripts/validate_skills.py" --portable
-    echo ""
-fi
-
-TX_DIR=""
-TX_COMMITTED=()
-
-rollback_transaction() {
-    local index name dest backup
-    set +e
-    for ((index=${#TX_COMMITTED[@]}-1; index>=0; index--)); do
-        name="${TX_COMMITTED[$index]}"
-        dest="$SKILLS_DIR/$name"
-        backup="$TX_DIR/backup/$name"
-        rm -rf "$dest"
-        if [[ -e "$backup" || -L "$backup" ]]; then
-            mv "$backup" "$dest"
-        fi
-    done
-    [[ -n "$TX_DIR" ]] && rm -rf "$TX_DIR"
-    TX_DIR=""
-    TX_COMMITTED=()
-    set -e
 }
 
-trap 'status=$?; if [[ -n "$TX_DIR" ]]; then echo "安装中断；回滚整批 skill。"; rollback_transaction; fi; exit "$status"' ERR
-trap 'if [[ -n "$TX_DIR" ]]; then echo "安装中断；回滚整批 skill。"; rollback_transaction; fi; exit 130' INT TERM HUP
+ARGS=(install --scope "$SCOPE" --project-dir "$PROJECT_DIR")
+[[ -n "$TARGET" ]] && ARGS+=(--target "$TARGET")
+[[ "$CHECK" == "1" ]] && ARGS+=(--check)
 
-install_all() {
-    local pairs=(
-        "$SKILL_ROOT|amazing-psycoder"
-        "$SKILL_ROOT/psy-exp-designer|psy-exp-designer"
-        "$SKILL_ROOT/psy-exp-coder|psy-exp-coder"
-        "$SKILL_ROOT/psy-exp-reviewer|psy-exp-reviewer"
-        "$SKILL_ROOT/psy-ana-designer|psy-ana-designer"
-        "$SKILL_ROOT/psy-ana-coder|psy-ana-coder"
-        "$SKILL_ROOT/psy-ana-reviewer|psy-ana-reviewer"
-    )
-    local pair src name dest backup
-
-    TX_DIR=$(mktemp -d "$SKILLS_DIR/.amazing-psycoder.transaction.XXXXXX")
-    mkdir -p "$TX_DIR/stage" "$TX_DIR/backup"
-
-    # Copy every source before changing any installed skill.
-    for pair in "${pairs[@]}"; do
-        src="${pair%%|*}"
-        name="${pair#*|}"
-        mkdir "$TX_DIR/stage/$name"
-        cp -R "$src"/. "$TX_DIR/stage/$name"/
-    done
-
-    # Same-filesystem moves make each replacement atomic; backups remain until all seven commit.
-    for pair in "${pairs[@]}"; do
-        name="${pair#*|}"
-        dest="$SKILLS_DIR/$name"
-        backup="$TX_DIR/backup/$name"
-        if [[ -e "$dest" || -L "$dest" ]]; then
-            mv "$dest" "$backup"
-        fi
-        if ! mv "$TX_DIR/stage/$name" "$dest"; then
-            if [[ -e "$backup" || -L "$backup" ]]; then
-                mv "$backup" "$dest"
-            fi
-            echo "  ✗ 安装失败: ${name}；回滚整批 skill"
-            rollback_transaction
-            return 1
-        fi
-        TX_COMMITTED+=("$name")
-        echo "  ✓ $name"
-    done
-
-    rm -rf "$TX_DIR"
-    TX_DIR=""
-    TX_COMMITTED=()
-}
-
-check_dir() {
-    local src="$1"
-    local name="$2"
-    local dest="$SKILLS_DIR/$name"
-    if [[ ! -d "$dest" ]]; then
-        echo "  ✗ 未安装 $name"
-        return 1
-    fi
-    if diff -qr "$src" "$dest" >/dev/null; then
-        echo "  ✓ $name 与工作区一致"
-    else
-        echo "  ✗ $name 已漂移或版本落后"
-        return 1
-    fi
-}
-
-run_for_all() {
-    local action="$1"
-    local status=0
-    local pairs=(
-        "$SKILL_ROOT|amazing-psycoder"
-        "$SKILL_ROOT/psy-exp-designer|psy-exp-designer"
-        "$SKILL_ROOT/psy-exp-coder|psy-exp-coder"
-        "$SKILL_ROOT/psy-exp-reviewer|psy-exp-reviewer"
-        "$SKILL_ROOT/psy-ana-designer|psy-ana-designer"
-        "$SKILL_ROOT/psy-ana-coder|psy-ana-coder"
-        "$SKILL_ROOT/psy-ana-reviewer|psy-ana-reviewer"
-    )
-    local pair src name
-    for pair in "${pairs[@]}"; do
-        src="${pair%%|*}"
-        name="${pair#*|}"
-        if ! "$action" "$src" "$name"; then
-            status=1
-            [[ "$action" == "check_dir" ]] || return 1
-        fi
-    done
-    return "$status"
-}
-
-if [[ "$MODE" == "check" ]]; then
-    echo "检查已安装 skill 与当前工作区..."
-    if run_for_all check_dir; then
-        echo "全部已安装 skill 与工作区一致。"
-        exit 0
-    fi
-    echo "检测到安装漂移；确认后重新运行安装命令以同步。"
-    exit 1
-fi
-
-echo "安装 Amazing PsyCoder..."
-
-install_all
-
-echo ""
-echo "完成。启动方式（因平台而异）："
-echo "  Claude Code: /amazing-psycoder"
-echo "  Codex:       \$amazing-psycoder"
-echo "  Hermes:      /amazing-psycoder (或自动匹配)"
-echo "  OpenClaw:    /amazing-psycoder (或自动匹配)"
-echo ""
-echo "实验流水线: psy-exp-designer → psy-exp-coder → psy-exp-reviewer"
-echo "分析流水线: psy-ana-designer → psy-ana-coder → psy-ana-reviewer"
+exec "$PYTHON" "$CLI" "${ARGS[@]}"

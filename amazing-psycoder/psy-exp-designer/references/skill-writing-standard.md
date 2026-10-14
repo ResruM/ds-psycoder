@@ -120,9 +120,10 @@ Direct review of existing code may enter at Reviewer without replaying upstream 
 
 ## 9. Maintain UI metadata
 
-Add `agents/openai.yaml` with quoted strings:
+Add `agents/deepseek.yaml` with quoted strings:
 
 ```yaml
+host: deepseek
 interface:
   display_name: "Experiment Coder"
   short_description: "Generate and debug cross-platform experiment code"
@@ -138,6 +139,6 @@ Keep `short_description` between 25 and 64 characters. Make `default_prompt` one
 - Parse all frontmatter as YAML and verify directory/name equality.
 - Verify all local Markdown links resolve.
 - Verify every `SKILL.md` body stays under 500 lines.
-- Verify every skill has matching `agents/openai.yaml` metadata.
+- Verify every skill has matching `agents/deepseek.yaml` metadata.
 - Search for stale counts, versions, contradictory gates, and duplicated authoritative rules.
 - Preserve unrelated user changes and review the final diff.

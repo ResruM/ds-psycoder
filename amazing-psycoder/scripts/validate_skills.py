@@ -157,12 +157,12 @@ def parse_frontmatter(path: Path) -> tuple[dict[str, str], list[str]]:
     return values, lines[end + 1 :]
 
 
-def parse_openai_yaml(path: Path) -> dict[str, str]:
+def parse_deepseek_yaml(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}
     lines = path.read_text(encoding="utf-8").splitlines()
-    if not lines or lines[0] != "interface:":
-        raise ValueError("agents/openai.yaml must start with interface:")
-    for line in lines[1:]:
+    if not lines or lines[0] != "host: deepseek" or len(lines) < 2 or lines[1] != "interface:":
+        raise ValueError("agents/deepseek.yaml must start with 'host: deepseek' then 'interface:'")
+    for line in lines[2:]:
         if not line.strip():
             continue
         match = QUOTED_FIELD.match(line)
@@ -518,9 +518,9 @@ def validate_skill(skill_dir: Path) -> list[str]:
     if len(body) >= 500:
         errors.append(f"{skill_file}: body must be under 500 lines, got {len(body)}")
 
-    metadata_file = skill_dir / "agents" / "openai.yaml"
+    metadata_file = skill_dir / "agents" / "deepseek.yaml"
     try:
-        metadata = parse_openai_yaml(metadata_file)
+        metadata = parse_deepseek_yaml(metadata_file)
     except (OSError, ValueError) as exc:
         errors.append(f"{metadata_file}: {exc}")
     else:

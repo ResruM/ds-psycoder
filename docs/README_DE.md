@@ -6,12 +6,12 @@
 
 [![Version](https://img.shields.io/badge/version-v1.4.0-2563eb.svg)](../amazing-psycoder/SKILL.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-Skill-blueviolet)](https://claude.ai/code)
-[![Codex](https://img.shields.io/badge/Codex-Skill-green)](https://github.com/openai/codex)
-[![Hermes](https://img.shields.io/badge/Hermes-Skill-orange)](https://github.com/NousResearch/hermes-agent)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-Skill-red)](https://github.com/openclaw/openclaw)
+[![DeepSeek](https://img.shields.io/badge/DeepSeek-Driven-4D6BFE)](https://www.deepseek.com)
+[![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Skill-2563eb)](https://github.com/deepseek-ai)
+[![DeepSeek API](https://img.shields.io/badge/DeepSeek%20API-ds--psycoder-0ea5e9)](https://api-docs.deepseek.com)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB)](https://www.python.org/)
 [![agentskills.io](https://img.shields.io/badge/agentskills.io-standard-333)](https://agentskills.io)
-[![Stars](https://img.shields.io/github/stars/soupandpsy/amazing-psycoder-skills?style=social)](https://github.com/soupandpsy/amazing-psycoder-skills)
+[![Stars](https://img.shields.io/github/stars/ResruM/ds-psycoder?style=social)](https://github.com/ResruM/ds-psycoder)
 
 [**简体中文**](../README.md) · [**繁體中文**](README_ZH-HANT.md) · [**English**](README_EN.md) · [**日本語**](README_JA.md) · [**Deutsch**](README_DE.md) · [**Français**](README_FR.md)
 
@@ -45,7 +45,7 @@ Diese Herausforderungen betreffen nicht nur das Programmieren, sondern auch Stud
 
 Du kannst mit einer Experimentidee, einem vorhandenen Design oder bestehenden Daten beginnen. Amazing PsyCoder unterstützt schrittweise bei der Bestätigung der Forschungsregeln, der Codeerzeugung und der Fehlersuche. Bei Bedarf stellst du weiterhin Konfigurationen, Datenbeschreibungen, Quellen für Ausschlussregeln und Ausführungsprotokolle bereit. KI-Ausgaben allein gelten nicht als „bereit zur Datenerhebung“ oder „publikationsbereit“: Das Experiment muss auf dem Erhebungsrechner getestet und die Analyse tatsächlich ausgeführt und geprüft werden.
 
-Amazing PsyCoder besteht aus 7 Skills—einem Einstiegsskill und 6 Fachskills—und folgt dem offenen Standard [agentskills.io](https://agentskills.io). Es kann in vier KI-Agenten installiert werden: Claude Code, Codex, Hermes und OpenClaw.
+Amazing PsyCoder besteht aus 7 Skills—einem Einstiegsskill und 6 Fachskills—und folgt dem offenen Standard [agentskills.io](https://agentskills.io). Diese Skills werden von DeepSeek angetrieben: Sie lassen sich sowohl in DeepSeek Harness (dsh) installieren als auch mit `ds_psycoder.py` direkt über die DeepSeek API aufrufen. Claude Code, Codex, Hermes und OpenClaw werden dafür nicht mehr benötigt und nicht mehr unterstützt.
 
 Zeit für die Forschung. Nicht für die Technik.
 
@@ -63,58 +63,55 @@ Zeit für die Forschung. Nicht für die Technik.
 
 ## ⚡ Installation
 
-Empfohlen ist der Installer im Repository. Er prüft zuerst alle 7 Skills und stellt bei einem Fehler die vorherigen Dateien wieder her.
+Empfohlen ist der mitgelieferte Installer im Repository. Er prüft zuerst alle 7 Skills; schlägt er fehl, werden die vorherigen Dateien wiederhergestellt.
 
 ```bash
-git clone https://github.com/soupandpsy/amazing-psycoder-skills
-cd amazing-psycoder-skills/amazing-psycoder
+git clone https://github.com/ResruM/ds-psycoder
+cd ds-psycoder
 ```
 
-**Claude Code**
+**DeepSeek Harness (empfohlen)**
 
 ```bash
-./install.sh claude
+python ds_psycoder.py install
+# gleichwertige Schreibweise: ./install.sh deepseek
 ```
 
-Danach `/amazing-psycoder` verwenden. Standardziel: `${CLAUDE_CONFIG_DIR:-~/.claude}/skills`.
+Installiert nach `$DSH_HOME/skills` (Standard: `~/.dsh/skills`). Beschreibe anschließend in einer `dsh web`- oder `dsh tui`-Sitzung direkt deine Aufgabe; DeepSeek ordnet anhand der description den passenden Skill zu.
 
-**Codex**
+Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File amazing-psycoder\install.ps1
+```
+
+**DeepSeek CLI (ohne Bindung an einen Agent-Host)**
 
 ```bash
-./install.sh codex
+python ds_psycoder.py doctor
+python ds_psycoder.py run "Baue mir ein Stroop-Experiment"
 ```
 
-Danach `$amazing-psycoder` verwenden. Standardziel: `~/.agents/skills`.
-
-**Hermes**
+Wenn du die DeepSeek API direkt aufrufen möchtest, setze `DEEPSEEK_API_KEY` und verwende das api-Backend:
 
 ```bash
-./install.sh hermes
+python ds_psycoder.py run --backend api --workdir ./study "Analysiere diese Daten"
 ```
-
-Danach `/amazing-psycoder` verwenden. Standardziel: `~/.hermes/skills`.
-
-**OpenClaw**
-
-```bash
-./install.sh openclaw
-```
-
-Danach die Aufgabe beschreiben; der OpenClaw-Agent ordnet den Skill zu. Standardziel: `~/.openclaw/skills`.
 
 <details>
-<summary><b>Projektinstallation und Installationsprüfung</b></summary>
+<summary><b>Projektinstallation, benutzerdefinierte Verzeichnisse und Installationsprüfung</b></summary>
 
 <br>
 
 ```bash
-./install.sh --scope project --project-dir /path/to/repo claude
-./install.sh --scope project --project-dir /path/to/repo codex
-./install.sh --scope project --project-dir /path/to/workspace openclaw
-./install.sh --check codex
+./install.sh --scope project --project-dir /path/to/study
+./install.sh --target /custom/skills
+./install.sh --check
+python ds_psycoder.py check --target /custom/skills
 ```
 
-Hermes hat derzeit kein stabiles projektbezogenes Skill-Verzeichnis und unterstützt deshalb nur die Benutzerinstallation. Siehe [`PLATFORMS.md`](../amazing-psycoder/PLATFORMS.md).
+Eine Projektinstallation schreibt nach `<project>/.dsh/skills`. Das Installationsskript `./install.sh`, die PowerShell-Version `install.ps1` und `ds_psycoder.py` sind äquivalent. Weitere Hinweise siehe
+[`PLATFORMS.md`](../amazing-psycoder/PLATFORMS.md).
 
 </details>
 
@@ -122,7 +119,7 @@ Hermes hat derzeit kein stabiles projektbezogenes Skill-Verzeichnis und unterst�
 
 ## 🚀 Schnellstart
 
-Rufe Amazing PsyCoder nach der Installation im jeweiligen KI-Agenten auf und beschreibe direkt, was du vorhast:
+Beschreibe nach der Installation direkt in einer DeepSeek-Harness-Sitzung, was du vorhast (alternativ mit `python ds_psycoder.py run "..."`):
 
 > "Ich möchte eine Stroop-Aufgabe machen, rot/grün/blau, Tastenreaktion" → startet automatisch das Experiment-Design
 
@@ -368,9 +365,10 @@ Amazing PsyCoder ❯ 🔍 Ausgaben geprüft · Bereitschaft: ready_for_publicati
 
 ```text
 amazing-psycoder-skills/
+├── ds_psycoder.py                     ← DeepSeek CLI (Installation / Prüfung / Ausführung)
 ├── amazing-psycoder/                  ← Haupteinstieg (v1.4.0)
 │   ├── SKILL.md                       ← Routing und globale Regeln
-│   ├── PLATFORMS.md · install.sh      ← Plattformhinweise und Installer
+│   ├── PLATFORMS.md · install.sh · install.ps1  ← Plattformhinweise und Installer
 │   ├── STANDALONE.md                  ← Direkte Agent-Nutzung
 │   ├── PSYCODER_STUDIO.md             ← Website-Integration
 │   ├── runtime/                       ← Website-Verträge und Funktionsumfang

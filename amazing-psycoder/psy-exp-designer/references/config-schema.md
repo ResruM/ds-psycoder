@@ -2,7 +2,7 @@
 
 Declarative YAML format for defining an experiment. When all config fields are filled and condition files are provided, the experiment code can be generated without further questions.
 
-> This YAML document is the editable handoff for standalone Claude Code/Codex
+> This YAML document is the editable handoff for standalone DeepSeek Harness
 > use. PsyCoder Studio does not submit this YAML to its Worker: the website
 > stores `ExperimentModel@4.0` JSON and compiles it directly for the selected
 > platform. Keep the semantics equivalent, but never serialize this

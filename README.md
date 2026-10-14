@@ -6,12 +6,12 @@
 
 [![Version](https://img.shields.io/badge/version-v1.4.0-2563eb.svg)](amazing-psycoder/SKILL.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-Skill-blueviolet)](https://claude.ai/code)
-[![Codex](https://img.shields.io/badge/Codex-Skill-green)](https://github.com/openai/codex)
-[![Hermes](https://img.shields.io/badge/Hermes-Skill-orange)](https://github.com/NousResearch/hermes-agent)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-Skill-red)](https://github.com/openclaw/openclaw)
+[![DeepSeek](https://img.shields.io/badge/DeepSeek-Driven-4D6BFE)](https://www.deepseek.com)
+[![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Skill-2563eb)](https://github.com/deepseek-ai)
+[![DeepSeek API](https://img.shields.io/badge/DeepSeek%20API-ds--psycoder-0ea5e9)](https://api-docs.deepseek.com)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB)](https://www.python.org/)
 [![agentskills.io](https://img.shields.io/badge/agentskills.io-standard-333)](https://agentskills.io)
-[![Stars](https://img.shields.io/github/stars/soupandpsy/amazing-psycoder-skills?style=social)](https://github.com/soupandpsy/amazing-psycoder-skills)
+[![Stars](https://img.shields.io/github/stars/ResruM/ds-psycoder?style=social)](https://github.com/ResruM/ds-psycoder)
 
 [**简体中文**](README.md) · [**繁體中文**](docs/README_ZH-HANT.md) · [**English**](docs/README_EN.md) · [**日本語**](docs/README_JA.md) · [**Deutsch**](docs/README_DE.md) · [**Français**](docs/README_FR.md)
 
@@ -45,7 +45,7 @@
 
 你可以先描述实验想法、已有设计或现有数据。Amazing PsyCoder 会逐步协助你确认研究规则、生成代码并检查问题；在需要时，你仍需提供配置、数据说明、排除依据和运行记录。系统不会仅凭 AI 输出就宣称“可以收数据”或“可以发表”：实验仍要在正式电脑上试跑，分析也必须真正运行并检查结果。
 
-Amazing PsyCoder 由 7 个 Skill 组成——1 个总入口加 6 个专业 Skill。它遵循 [agentskills.io](https://agentskills.io) 开放标准，可安装到 Claude Code、Codex、Hermes 和 OpenClaw 这四个 AI Agent 中。
+Amazing PsyCoder 由 7 个 Skill 组成——1 个总入口加 6 个专业 Skill。它遵循 [agentskills.io](https://agentskills.io) 开放标准，并由 DeepSeek 驱动：既可以安装到 DeepSeek Harness（dsh），也可以用 ds_psycoder.py 直接调用 DeepSeek API，不再需要、也不再支持 Claude Code、Codex、Hermes 或 OpenClaw。
 
 **把时间还给研究本身。**
 
@@ -68,41 +68,37 @@ Amazing PsyCoder 由 7 个 Skill 组成——1 个总入口加 6 个专业 Skill
 推荐使用仓库自带的安装脚本。它会先检查全部 7 个 Skill；如果中途失败，会恢复原来的文件。
 
 ```bash
-git clone https://github.com/soupandpsy/amazing-psycoder-skills
-cd amazing-psycoder-skills/amazing-psycoder
+git clone https://github.com/ResruM/ds-psycoder
+cd ds-psycoder
 ```
 
-**Claude Code**
+**DeepSeek Harness（推荐）**
 
 ```bash
-./install.sh claude
+python ds_psycoder.py install
+# 等价写法：./install.sh deepseek
 ```
 
-安装后使用 `/amazing-psycoder`。默认安装到 `${CLAUDE_CONFIG_DIR:-~/.claude}/skills`。
+安装到 `$DSH_HOME/skills`（默认 `~/.dsh/skills`）。随后在 `dsh web` 或 `dsh tui` 会话中直接描述任务，DeepSeek 会按 description 匹配对应 Skill。
 
-**Codex**
+Windows PowerShell：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File amazing-psycoder\install.ps1
+```
+
+**DeepSeek CLI（不依赖任何 Agent 宿主）**
 
 ```bash
-./install.sh codex
+python ds_psycoder.py doctor
+python ds_psycoder.py run "帮我做一个 Stroop 实验"
 ```
 
-安装后使用 `$amazing-psycoder`。默认安装到 `~/.agents/skills`。
-
-**Hermes**
+需要直接调用 DeepSeek API 时，设置 `DEEPSEEK_API_KEY` 后使用 api 后端：
 
 ```bash
-./install.sh hermes
+python ds_psycoder.py run --backend api --workdir ./study "分析这份数据"
 ```
-
-安装后使用 `/amazing-psycoder`。默认安装到 `~/.hermes/skills`。
-
-**OpenClaw**
-
-```bash
-./install.sh openclaw
-```
-
-安装后直接描述任务，由 OpenClaw Agent 匹配 Skill。默认安装到 `~/.openclaw/skills`。
 
 <details>
 <summary><b>项目级安装、自定义目录和安装检查</b></summary>
@@ -110,22 +106,21 @@ cd amazing-psycoder-skills/amazing-psycoder
 <br>
 
 ```bash
-./install.sh --scope project --project-dir /path/to/repo claude
-./install.sh --scope project --project-dir /path/to/repo codex
-./install.sh --scope project --project-dir /path/to/workspace openclaw
-./install.sh --check codex
+./install.sh --scope project --project-dir /path/to/study
+./install.sh --target /custom/skills
+./install.sh --check
+python ds_psycoder.py check --target /custom/skills
 ```
 
-Hermes 当前没有稳定的项目级目录，因此只提供用户级安装。更多说明见
+项目级安装写入 `<project>/.dsh/skills`。安装脚本 `./install.sh`、PowerShell 版 `install.ps1` 与 `ds_psycoder.py` 等价。更多说明见
 [`PLATFORMS.md`](amazing-psycoder/PLATFORMS.md)。
 
 </details>
-
 ---
 
 ## 🚀 快速开始
 
-安装后，在对应的 AI Agent 中调用 Amazing PsyCoder，并直接描述你想做什么：
+安装后，在 DeepSeek Harness 会话中直接描述你想做什么（也可以用 `python ds_psycoder.py run "..."`）：
 
 > “我要做一个 Stroop 任务，红绿蓝三色，按键判断墨色” → 自动进入实验设计
 
@@ -366,10 +361,11 @@ Amazing PsyCoder ❯ 🔍 已检查运行结果
 ## 📂 文件结构
 
 ```text
-amazing-psycoder-skills/
+ds-psycoder/
+├── ds_psycoder.py                     ← DeepSeek CLI（安装 / 检查 / 运行）
 ├── amazing-psycoder/                  ← 总入口（v1.4.0）
 │   ├── SKILL.md                       ← 任务分流和全局规则
-│   ├── PLATFORMS.md · install.sh      ← 平台说明和安装器
+│   ├── PLATFORMS.md · install.sh · install.ps1  ← 平台说明和安装器
 │   ├── STANDALONE.md                  ← 在 Agent 中直接使用
 │   ├── PSYCODER_STUDIO.md             ← 网站接入说明
 │   ├── runtime/                       ← 网站使用的数据格式和能力范围
@@ -396,6 +392,6 @@ amazing-psycoder-skills/
 <div align="center">
 
 💡 有想法或建议？欢迎来信 [tangdingyi04@outlook.com](mailto:tangdingyi04@outlook.com)<br>
-🪄 Made by [soupandpsy](https://github.com/soupandpsy) · MIT License
+🪄 Made by [soupandpsy](https://github.com/soupandpsy) · DeepSeek 版由 [ResruM](https://github.com/ResruM) 维护 · MIT License
 
 </div>
